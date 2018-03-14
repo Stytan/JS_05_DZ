@@ -228,3 +228,273 @@ function f2(a, b) {
 }
 
 f2.defer(1000)(1, 2); // выведет 3 через 1 секунду.
+
+//Свои классы на прототипах
+
+view('Свои классы на прототипах', 'h2');
+
+view('Перепишите CoffeeMachine в виде класса', 'h3');
+
+function CoffeeMachine(power) {
+  this._waterAmount = 0;
+  this._power = power;
+}
+
+CoffeeMachine.prototype.WATER_HEAT_CAPACITY = 4200;
+
+CoffeeMachine.prototype._getTimeToBoil = function () {
+  return this._waterAmount * this.WATER_HEAT_CAPACITY * 80 / this._power;
+};
+
+CoffeeMachine.prototype.run = function() {
+  setTimeout(function () {
+    alert('Прототипный кофе готов!');
+  }, this._getTimeToBoil());
+};
+
+CoffeeMachine.prototype.setWaterAmount = function(amount) {
+  this._waterAmount = amount;
+};
+
+
+var coffeeMachine = new CoffeeMachine(10000);
+coffeeMachine.setWaterAmount(50);
+coffeeMachine.run();
+
+//Хомяки с __proto__
+
+view('Хомяки с __proto__', 'h3');
+
+view(`function Hamster() {
+  this.food = [];
+}
+
+Hamster.prototype.found = function(something) {
+  this.food.push(something);
+};
+
+// Создаём двух хомяков и кормим первого
+var speedy = new Hamster();
+var lazy = new Hamster();
+
+speedy.found("яблоко");
+speedy.found("орех");
+
+alert( speedy.food.length ); // 2
+alert( lazy.food.length ); // 2 (!??)
+
+Нужно было перенести food из прототипа внутрь объекта Hamster,
+чтоб у каждого нового хомяка создавался свой массив`, 'pre');
+
+//Наследование классов в JavaScript
+view('Наследование классов в JavaScript', 'h2');
+
+view('Найдите ошибку в наследовании', 'h3');
+
+view(`function Animal(name) {
+  this.name = name;
+}
+
+Animal.prototype.walk = function() {
+  alert( "ходит " + this.name );
+};
+
+function Rabbit(name) {
+  this.name = name;
+}
+Rabbit.prototype = Animal.prototype;
+
+Rabbit.prototype.walk = function() {
+  alert( "прыгает! и ходит: " + this.name );
+};`, 'pre');
+
+view('Ошибка заключается в том, что Rabbit.prototype присваивается ссылка на <br>' +
+  'Animal.prototype, что в дальнейшем приводит к замене метода walk в Animal.<br>' +
+  'В Rabbit.prototype следует присваивать новый объект созданный на основе Animal.prototype');
+
+//В чём ошибка в наследовании
+view('В чём ошибка в наследовании', 'h3');
+view(`function Animal(name) {
+  this.name = name;
+
+  this.walk = function() {
+    alert( "ходит " + this.name );
+  };
+
+}
+
+function Rabbit(name) {
+  Animal.apply(this, arguments);
+}
+Rabbit.prototype = Object.create(Animal.prototype);
+
+Rabbit.prototype.walk = function() {
+  alert( "прыгает " + this.name );
+};
+
+var rabbit = new Rabbit("Кроль");
+rabbit.walk();`, 'pre');
+
+view('Функция walk создаётся в объекте Animal, а не в его прототипе, в результате <br>' +
+  'при вызове в конструкторе Rabbit контсруктора Animal этот метод создаётся в самом <br>' +
+  'объекте rabbit и перекрывает созданный в прототипе метод.');
+
+//Класс "часы"
+view('Класс "часы"', 'h3');
+
+view('Задача: переписать часы на прототипах. ' +
+  'Приватные свойства и методы сделать защищёнными','h4');
+
+function Clock(options) {
+  this._template = options.template.toString();
+}
+
+Clock.prototype._render = function () {
+  let date = new Date();
+
+  let hours = date.getHours();
+  if (hours < 10) hours = '0' + hours;
+
+  let min = date.getMinutes();
+  if (min < 10) min = '0' + min;
+
+  let sec = date.getSeconds();
+  if (sec < 10) sec = '0' + sec;
+
+  let output = this._template.replace('h', hours).replace('m', min).replace('s', sec);
+
+  console.log(output);
+};
+
+Clock.prototype.stop = function() {
+  clearInterval(this._timer);
+};
+
+Clock.prototype.start = function() {
+  this._render();
+  let self = this;
+  this._timer = setInterval(() => self._render(), 1000);
+};
+
+
+// var clock = new Clock({
+//   template: 'h:m:s'
+// });
+// clock.start();
+
+//Класс "расширенные часы"
+view('Класс "расширенные часы"', 'h3');
+view(`Создайте класс, расширяющий её, добавляющий поддержку параметра precision,
+который будет задавать частоту тика в setInterval. Значение по умолчанию: 1000`, 'h4');
+
+function ExtendedClock (options) {
+  Clock.apply(this, arguments);
+  this._precision = +options.precision || 1000;
+}
+
+ExtendedClock.prototype = Object.create(Clock.prototype);
+
+ExtendedClock.prototype.constructor =ExtendedClock;
+
+ExtendedClock.prototype.start = function() {
+  this._render();
+  let self = this;
+  this._timer = setInterval(() => self._render(), this._precision);
+};
+
+var eClock = new ExtendedClock({
+  template: 'h:m:s',
+  precision: 2000
+});
+eClock.start();
+
+
+//Меню с таймером для анимации
+
+function Menu(state) {
+  this._state = state || Menu.STATE_CLOSED;
+};
+
+Menu.STATE_OPEN = 1;
+Menu.STATE_CLOSED = 0;
+
+Menu.prototype.open = function() {
+  this._state = Menu.STATE_OPEN;
+};
+
+Menu.prototype.close = function() {
+  this._state = Menu.STATE_CLOSED;
+};
+
+Menu.prototype._stateAsString = function() {
+  switch (this._state) {
+    case Menu.STATE_OPEN:
+      return 'открыто';
+
+    case Menu.STATE_CLOSED:
+      return 'закрыто';
+  }
+};
+
+Menu.prototype.showState = function() {
+  alert(this._stateAsString());
+};
+
+
+function AnimatingMenu(state) { // замените на ваш код для AnimatingMenu
+  Menu.apply(this, arguments);
+}
+
+AnimatingMenu.prototype = Object.create(Menu.prototype);
+AnimatingMenu.prototype.constructor = AnimatingMenu;
+
+AnimatingMenu.STATE_ANIMATING = 2;
+
+AnimatingMenu.prototype.open = function() {
+  this._state = AnimatingMenu.STATE_ANIMATING;
+  let self = this;
+  this._timer = setTimeout(() => Menu.prototype.open.apply(self, arguments), 1000);
+};
+
+AnimatingMenu.prototype.close = function() {
+  clearTimeout(this._timer);
+  Menu.prototype.close.apply(this, arguments);
+};
+
+AnimatingMenu.prototype.showState = function() {
+  if(this._state === AnimatingMenu.STATE_ANIMATING)
+    alert('анимация');
+  else Menu.prototype.showState.apply(this, arguments);
+};
+// использование..
+
+var menu = new AnimatingMenu();
+
+menu.showState(); // закрыто
+
+menu.open();
+menu.showState(); // анимация
+
+setTimeout(function() {
+  menu.showState(); // открыто
+
+  menu.close();
+  menu.showState(); // закрыто (закрытие без анимации)
+}, 1000);
+
+
+//Что содержит constructor?
+
+view('Что содержит свойство rabbit.constructor? <br>' +
+  'Распознает ли проверка в alert объект как Rabbit?', 'h3');
+
+view(`function Animal() {}
+
+function Rabbit() {}
+Rabbit.prototype = Object.create(Animal.prototype);
+
+var rabbit = new Rabbit();
+
+alert( rabbit.constructor == Rabbit ); // что выведет?`, 'pre');
+
+view('rabbit.constructor содержит ссылку на Animal скопированную из Animal.prototype');
