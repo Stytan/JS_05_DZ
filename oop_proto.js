@@ -498,3 +498,69 @@ var rabbit = new Rabbit();
 alert( rabbit.constructor == Rabbit ); // что выведет?`, 'pre');
 
 view('rabbit.constructor содержит ссылку на Animal скопированную из Animal.prototype');
+
+//Проверка класса: "instanceof"
+
+view('Проверка класса: "instanceof"', 'h2');
+
+view('Странное поведение instanceof', 'h3');
+
+view('Почему instanceof в коде ниже возвращает true, ведь объект a явно создан не B()?', 'h3');
+
+view(`function A() {}
+
+function B() {}
+
+A.prototype = B.prototype = {};
+
+var a = new A();
+
+alert( a instanceof B ); // true`, 'pre');
+
+view('Потому что a.__proto__ ссылается как и B.prototype на один пустой объект');
+
+//Что выведет instanceof?
+view('Что выведет instanceof?', 'h3');
+
+view(`function Animal() {}
+
+function Rabbit() {}
+Rabbit.prototype = Object.create(Animal.prototype);
+
+var rabbit = new Rabbit();
+
+alert( rabbit instanceof Rabbit );
+alert( rabbit instanceof Animal );
+alert( rabbit instanceof Object );`, 'pre');
+
+view('Во всех вызовах быдет выведен true');
+
+//Свои ошибки, наследование от Error
+view('Свои ошибки, наследование от Error', 'h2');
+
+view('Унаследуйте от SyntaxError', 'h3');
+
+view('Создайте ошибку FormatError, которая будет наследовать' +
+  ' от встроенного класса SyntaxError', 'h3');
+
+function FormatError(message) {
+  SyntaxError.call(this, message);
+  this.name = 'FormatError';
+  this.message = message;
+  if(Error.captureStackTrace) {
+    Error.captureStackTrace(this, this.constructor);
+  } else {
+    this.stack = (new Error()).stack;
+  }
+}
+
+FormatError.prototype = Object.create(SyntaxError.prototype);
+FormatError.prototype.constructor = FormatError;
+
+var err = new FormatError("ошибка форматирования");
+
+alert( err.message ); // ошибка форматирования
+alert( err.name ); // FormatError
+alert( err.stack ); // стек на момент генерации ошибки
+
+alert( err instanceof SyntaxError ); // true
