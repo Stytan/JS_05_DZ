@@ -7,3 +7,4 @@ function view(obj, elem) {
   if (elem === undefined) elem = 'p';
   out.insertAdjacentHTML('beforeend', '<' + elem + '>' + obj.toString() + '</' + elem + '>');
 }
+//test
